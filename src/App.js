@@ -226,8 +226,9 @@ function App() {
         } else {
             setCurrent(e => e + 1);
         }
-        setInput('')
+        setInput('');
         setShow(false);
+        setRepeatCount(0);
         setError(false);
         setTilde(false);
         updateStatus(vocabulary[current].fr, -1)
