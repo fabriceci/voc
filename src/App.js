@@ -111,7 +111,7 @@ function App() {
         }
 
         if (typeof message !== 'string') {
-            message = vocabulary[current].es.join(",");
+            message = vocabulary[current].es.join(", o ,");
         }
 
         var msg = new SpeechSynthesisUtterance(message);
@@ -257,33 +257,42 @@ function App() {
                     <div>
                         <select value={type} onChange={(e) => addFilter('type', e.target.value)}>
                             <option key="all" value="all">pas de filtre</option>
-                            <option key="error" value="error">nouveau et taux d'erreur > 80%</option>
+                            <option key="error" value="error">nouveaux et erreurs</option>
                             <option key="error-only" value="error-only">juste les erreurs</option>
                         </select>
                     </div>
                 </div>
             </div>
-            <ul className="helper">
-                <li><kbd onClick={() => setInput(input => input += 'ñ')}>ñ</kbd></li>
-                <li><kbd onClick={() => setInput(input => input += 'á')}>á</kbd></li>
-                <li><kbd onClick={() => setInput(input => input += 'ó')}>ó</kbd></li>
-                <li><kbd onClick={() => setInput(input => input += 'í')}>í</kbd></li>
-            </ul>
+            <div style={{position: 'relative'}}>
+                <div className="help-message">Aide à la saisie, cliquez sur une lettre pour l'ajouter</div>
+                <div className="helper">
+                    <li><kbd onClick={() => setInput(input => input += 'ñ')}>ñ</kbd></li>
+                    <li><kbd onClick={() => setInput(input => input += 'á')}>á</kbd></li>
+                    <li><kbd onClick={() => setInput(input => input += 'ó')}>ó</kbd></li>
+                    <li><kbd onClick={() => setInput(input => input += 'í')}>í</kbd></li>
+                    <li><kbd onClick={() => setInput(input => input += '¡')}>¡</kbd></li>
+                    <li><kbd onClick={() => setInput(input => input += '¿')}>¿</kbd></li>
+                </div>
+            </div>
 
-            <div
-                className="statistics">{resultForWord ? getRatio(resultForWord.attemps, resultForWord.success) + ' % de réussite' : 'nouveau'} | {vocabulary[current].module} </div>
+            <div className="statistics">
+                <div>{ vocabulary[current].es.length > 1 && vocabulary[current].es.length + " possibilités" }</div>
+                <div>
+                {resultForWord ? getRatio(resultForWord.attemps, resultForWord.success) + ' % de réussite' : 'nouveau'} | {vocabulary[current].module}
+                </div>
+            </div>
             <div className="currentWord alert alert-info">{vocabulary[current].fr}</div>
 
 
             <div className="input-group mb-3" style={{width: '100%'}}>
-                <input style={{flexGrow: 1, padding: '0 15px'}} className={inputClass} type="text" value={input}
+                <input style={{flexGrow: 1, padding: '0 15px', outline: 'none'}} className={inputClass} type="text" value={input}
                        onChange={(e) => setInput(e.target.value)}/>
                 <div className="input-group-append">
                     <button onClick={checkWord} className="btn btn-primary">Valider</button>
                 </div>
             </div>
             {show &&
-            <p className="answer">{vocabulary[current].es.join(',')}</p>
+            <p className="answer">{vocabulary[current].es.join(', ')}</p>
             }
 
             <div className="solutions">
