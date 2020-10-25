@@ -91,7 +91,7 @@ function App() {
     const [error, setError] = useState(false)
     const [show, setShow] = useState(false)
     const [module, setModule] = useState('all')
-    const [type, setType] = useState('all')
+    const [type, setType] = useState('error')
     const [tilde, setTilde] = useState(false)
 
     const refreshData = async () => {
@@ -141,11 +141,11 @@ function App() {
         }
     }, [current, vocabulary, input]);
 
-
     useEffect(() => {
         const loadSheet = async () => {
             await loadGoogleSheet();
-            setVocabulary([...words].sort(() => Math.random() - 0.5));
+            // setVocabulary([...words].sort(() => Math.random() - 0.5));
+            filterModule('all', 'error')
         }
 
         loadSheet();
@@ -201,11 +201,11 @@ function App() {
             result = result.filter(e => status.has(e.fr) && getRatio(status.get(e.fr).attemps, status.get(e.fr).success) < 80);
         }
 
-        setVocabulary(result);
+        setVocabulary(result.sort(() => Math.random() - 0.5));
     }
 
-    const addFilter = (type, value) => {
-        if (type === 'module') {
+    const addFilter = (_type, value) => {
+        if (_type === 'module') {
             filterModule(value, type);
             setModule(value)
         } else {
