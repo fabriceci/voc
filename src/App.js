@@ -17,9 +17,12 @@ const cleanString = (s) => {
             .replaceAll('?', '')
             .replaceAll('.', '')
             .replaceAll('…', '')
+            .replace(/\s\s+/g, ' ')
             .trim()
             .toLowerCase();
 }
+
+const cleanAndNormalize = (s) => cleanString(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
 
 async function loadGoogleSheet(force = false) {
 
@@ -58,7 +61,9 @@ async function loadGoogleSheet(force = false) {
                 if (index === -1) {
                     result.push(value);
                 } else {
-                    result[index].es.push(...value.es);
+                    if(!result[index].es.includes(...value.es)){
+                        result[index].es.push(...value.es);
+                    }
                 }
 
                 // liste des modules
@@ -108,6 +113,8 @@ const updateStatus = (key, point) => {
 function App() {
     const [vocabulary, setVocabulary] = useState([]);
     const [current, setCurrent] = useState(0)
+    const [repeat, setRepeat] = useState(true)
+    const [repeatCount, setRepeatCount] = useState(0)
     const [input, setInput] = useState('')
     const [error, setError] = useState(false)
     const [show, setShow] = useState(false)
@@ -121,7 +128,8 @@ function App() {
         localStorage.removeItem("words")
         localStorage.removeItem("modules")
         await loadGoogleSheet(true);
-        setVocabulary([...words].sort(() => Math.random() - 0.5));
+        // setVocabulary([...words].sort(() => Math.random() - 0.5));
+        filterModule(module, type);
     }
 
     const readWord = (message) => {
@@ -152,12 +160,23 @@ function App() {
         const target = vocabulary[current].es;
         if (value.trim() === '') return;
         if (target.map(cleanString).includes(cleanString(value))) {
-            setCurrent(e => (e + 1) === vocabulary.length ? 0 : e + 1)
-            setInput('')
-            setError(false);
-            setShow(false);
-            setTilde(false);
-            updateStatus(vocabulary[current].fr, error || show ? -1 : 1)
+            if(repeat && (error || show) && repeatCount < 4){
+                setInput('')
+                setRepeatCount(c => c+1)
+            } else {
+                if(current + 1 === vocabulary.length){
+                    setCurrent(0)
+                    filterModule(module, type);
+                } else {
+                    setCurrent(e => e + 1);
+                }
+                setInput('')
+                setRepeatCount(0)
+                setError(false);
+                setShow(false);
+                setTilde(false);
+                updateStatus(vocabulary[current].fr, error || show ? -1 : 1)
+            }
             if(textInput) textInput.current.focus()
         } else {
             setError(true);
@@ -201,7 +220,12 @@ function App() {
     }, [tilde])
 
     const nextWord = () => {
-        setCurrent(e => (e + 1) === vocabulary.length ? 0 : e + 1)
+        if(current + 1 === vocabulary.length){
+            setCurrent(0)
+            filterModule(module, type);
+        } else {
+            setCurrent(e => e + 1);
+        }
         setInput('')
         setShow(false);
         setError(false);
@@ -223,22 +247,30 @@ function App() {
             result = words.filter(e => e.module === module);
         }
         const status = getStatus()
+        var copy = [...result]
         if (filter === 'error') {
             result = result.filter(e => !status.has(e.fr) || getRatio(status.get(e.fr).attemps, status.get(e.fr).success) < 80);
         } else if (filter === 'error-only') {
             result = result.filter(e => status.has(e.fr) && getRatio(status.get(e.fr).attemps, status.get(e.fr).success) < 80);
         }
 
+        if(result.length === 0 ){
+            setType('all');
+            result = copy;
+        }
+        setCurrent(0)
         setVocabulary(result.sort(() => Math.random() - 0.5));
     }
 
     const addFilter = (_type, value) => {
         if (_type === 'module') {
-            filterModule(value, type);
             setModule(value)
+            filterModule(value, type);
+
         } else {
-            filterModule(module, value)
             setType(value)
+            filterModule(module, value)
+
         }
     }
 
@@ -258,7 +290,7 @@ function App() {
     if (error) inputClass += ' error';
     if (error && currentWords.includes(currentInput)) {
         inputClass += ' success'
-    } else if (error && currentWords.map(e => cleanString(e).normalize("NFD").replace(/[\u0300-\u036f]/g, "")).includes(cleanString(currentInput))) {
+    } else if (error && currentWords.map(cleanAndNormalize).includes(cleanAndNormalize(currentInput))) {
         inputClass += ' warning'
         if (!tilde) {
             setTilde(true)
@@ -296,6 +328,10 @@ function App() {
                             <option key="error-only" value="error-only">juste les erreurs</option>
                         </select>
                     </div>
+                    <div>
+                        <input onChange={() => setRepeat(e => !e)} checked={repeat} type="checkbox" className="form-check-input" id="repeatMode"/>
+                        <label className="form-check-label" htmlFor="repeatMode">Répeter en cas d'erreur</label>
+                    </div>
                 </div>
             </div>
             <div style={{position: 'relative'}}>
@@ -311,6 +347,10 @@ function App() {
 
             <div className="statistics">
                 <div>{ vocabulary[current].es.length > 1 && vocabulary[current].es.length + " possibilités" }</div>
+                {repeat && (show || error) && <div>
+                    {repeatCount}/5
+                    </div>
+                }
                 <div>
                 {resultForWord ? getRatio(resultForWord.attemps, resultForWord.success) + ' % de réussite' : 'nouveau'} | {vocabulary[current].module}
                 </div>
