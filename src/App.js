@@ -5,14 +5,14 @@ let modules = []
 let words = []
 
 const getRatio = (attempt, success) => {
-    if(success === 0) return 0;
-    return Math.round((success/attempt) * 100 * 100) / 100
+    if (success === 0) return 0;
+    return Math.round((success / attempt) * 100 * 100) / 100
 }
 
-async function loadGoogleSheet(force = false){
+async function loadGoogleSheet(force = false) {
 
     let result = JSON.parse(localStorage.getItem("words"));
-    if(!result || force){
+    if (!result || force) {
 
         const doc = new GoogleSpreadsheet('1lA849BH1mhhAlnmhamfNnkXQVGJmEz_XpD5Fqbco5m0')
         doc.useApiKey('AIzaSyB3fhuMVnaW77F8ZiDu_mo_xJKdKzQo6tU')
@@ -23,7 +23,7 @@ async function loadGoogleSheet(force = false){
             const data = {
                 fr: r['fr'] ? r['fr'].trim() : undefined,
                 es: r['es'] ? [r['es'].trim()] : [],
-                type:  r['type'] ? r['type'].trim() : undefined,
+                type: r['type'] ? r['type'].trim() : undefined,
                 module: r['module'] ? r['module'].trim() : undefined,
             }
             return data;
@@ -33,17 +33,19 @@ async function loadGoogleSheet(force = false){
         var modulesList = []
         data.forEach(value => {
             // Restructuration
-            var index = result.findIndex(e => e.fr === value.fr);
-            if(index === -1){
-                result.push(value);
-            } else {
-                result[index].es.push(...value.es);
-            }
+            if(value.fr){
+                var index = result.findIndex(e => e.fr === value.fr);
+                if (index === -1) {
+                    result.push(value);
+                } else {
+                    result[index].es.push(...value.es);
+                }
 
-            // liste des modules
+                // liste des modules
 
-            if (value.module && !modulesList.includes(value.module)) {
-                modulesList.push(value.module);
+                if (value.module && !modulesList.includes(value.module)) {
+                    modulesList.push(value.module);
+                }
             }
         })
         // ajout dans la variable globale et dans le storage
@@ -58,26 +60,26 @@ async function loadGoogleSheet(force = false){
 
 const getStatus = () => {
     const status = JSON.parse(localStorage.getItem("status"));
-    if(!status){
+    if (!status) {
         return new Map();
-    }else {
+    } else {
         return new Map(status);
     }
 }
 
 const updateStatus = (key, point) => {
     let status = getStatus();
-    if(status.has(key)){
+    if (status.has(key)) {
         var keyValue = status.get(key);
         keyValue.attemps += 1;
-        if(point === 1){
+        if (point === 1) {
             keyValue.success += 1;
         } else {
             keyValue.error += 1;
         }
         status.set(key, keyValue);
     } else {
-        status.set(key, {attemps: 1, success: point === 1 ? 1 : 0, error: point ===-1 ? 1 : 0 })
+        status.set(key, {attemps: 1, success: point === 1 ? 1 : 0, error: point === -1 ? 1 : 0})
     }
     localStorage.setItem("status", JSON.stringify([...status]));
 }
@@ -92,6 +94,14 @@ function App() {
     const [type, setType] = useState('all')
     const [tilde, setTilde] = useState(false)
 
+    const refreshData = async () => {
+        setVocabulary([]);
+        localStorage.removeItem("words")
+        localStorage.removeItem("modules")
+        await loadGoogleSheet(true);
+        setVocabulary([...words].sort(() => Math.random() - 0.5));
+    }
+
     const readWord = (message) => {
         setError(true)
         var synth = window.speechSynthesis;
@@ -100,7 +110,7 @@ function App() {
             return;
         }
 
-        if(typeof message !== 'string'){
+        if (typeof message !== 'string') {
             message = vocabulary[current].es.join(",");
         }
 
@@ -120,7 +130,7 @@ function App() {
         const target = vocabulary[current].es;
         if (value.trim() === '') return;
         if (target.map(t => t.toLowerCase()).includes(value)) {
-            setCurrent(e => (e+1) === vocabulary.length ? 0 : e+ 1)
+            setCurrent(e => (e + 1) === vocabulary.length ? 0 : e + 1)
             setInput('')
             setError(false);
             setShow(false);
@@ -144,7 +154,7 @@ function App() {
 
     useEffect(() => {
         const handleEnter = function (e) {
-            if(e.key === '@'){
+            if (e.key === '@') {
                 setShow(e => true)
             }
             if (e.key === 'Control') {
@@ -162,13 +172,13 @@ function App() {
     }, [checkWord])
 
     useEffect(() => {
-        if(tilde === true){
+        if (tilde === true) {
             readWord("¿Dónde está la tilde?")
         }
     }, [tilde])
 
     const nextWord = () => {
-        setCurrent(e => (e+1) === vocabulary.length ? 0 : e+ 1)
+        setCurrent(e => (e + 1) === vocabulary.length ? 0 : e + 1)
         setInput('')
         setShow(false);
         setError(false);
@@ -185,9 +195,9 @@ function App() {
             result = words.filter(e => e.module === module);
         }
         const status = getStatus()
-        if(filter === 'error'){
+        if (filter === 'error') {
             result = result.filter(e => !status.has(e.fr) || getRatio(status.get(e.fr).attemps, status.get(e.fr).success) < 80);
-        } else if(filter === 'error-only') {
+        } else if (filter === 'error-only') {
             result = result.filter(e => status.has(e.fr) && getRatio(status.get(e.fr).attemps, status.get(e.fr).success) < 80);
         }
 
@@ -195,7 +205,7 @@ function App() {
     }
 
     const addFilter = (type, value) => {
-        if(type === 'module'){
+        if (type === 'module') {
             filterModule(value, type);
             setModule(value)
         } else {
@@ -205,18 +215,24 @@ function App() {
     }
 
     if (vocabulary.length === 0) {
-        return <div style={{textAlign: 'center'}}>Chargement...</div>
+        return <div className="loader">
+            <div>chargement...</div>
+            <div className="lds-ripple">
+                <div></div>
+                <div></div>
+            </div>
+        </div>
     }
 
     var inputClass;
-    var currentWords =  vocabulary[current].es.map(t => t.toLowerCase());
+    var currentWords = vocabulary[current].es.map(t => t.toLowerCase());
     var currentInput = input.toLowerCase().trim()
     if (error) inputClass = 'error';
-    if (error && currentWords.includes(currentInput)){
+    if (error && currentWords.includes(currentInput)) {
         inputClass = 'success'
-    } else if (error && currentWords.map(e => e.normalize("NFD").replace(/[\u0300-\u036f]/g, "")).includes(currentInput)){
+    } else if (error && currentWords.map(e => e.normalize("NFD").replace(/[\u0300-\u036f]/g, "")).includes(currentInput)) {
         inputClass = 'warning'
-        if(!tilde){
+        if (!tilde) {
             setTilde(true)
         }
 
@@ -226,7 +242,9 @@ function App() {
         <div className="App">
             <div className="status">
                 <div>{current + 1}/{vocabulary.length + 1}</div>
-                <div>{vocabulary[current].module}</div>
+                <div>
+                    <div className="btn btn-info btn-refresh" onClick={refreshData}>mettre à jour les données</div>
+                </div>
                 <div>
                     <div>
                         <select value={module} onChange={(e) => addFilter('module', e.target.value)}>
@@ -239,7 +257,7 @@ function App() {
                     <div>
                         <select value={type} onChange={(e) => addFilter('type', e.target.value)}>
                             <option key="all" value="all">pas de filtre</option>
-                            <option key="error" value="error">nouveau et taux d'erreur > 80% </option>
+                            <option key="error" value="error">nouveau et taux d'erreur > 80%</option>
                             <option key="error-only" value="error-only">juste les erreurs</option>
                         </select>
                     </div>
@@ -252,7 +270,8 @@ function App() {
                 <li><kbd onClick={() => setInput(input => input += 'í')}>í</kbd></li>
             </ul>
 
-            <div className="statistics">{ resultForWord ? getRatio(resultForWord.attemps, resultForWord.success) + ' % de réussite' : 'nouveau'}</div>
+            <div
+                className="statistics">{resultForWord ? getRatio(resultForWord.attemps, resultForWord.success) + ' % de réussite' : 'nouveau'} | {vocabulary[current].module} </div>
             <div className="currentWord alert alert-info">{vocabulary[current].fr}</div>
 
 
