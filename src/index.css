@@ -147,3 +147,51 @@ kbd {
         opacity: 0;
     }
 }
+
+input{
+    max-width: 100%;
+}
+.mainInput{
+    flex-grow: 1;
+    padding: 15px;
+    outline: none;
+    font-size: 22px;
+    line-height: 1.1;
+    width: 100%;
+}
+
+@media screen and (max-width: 600px) {
+    .status {
+        flex-direction: column;
+        align-content: center;
+        align-items: center;
+    }
+    .status div{
+        margin-bottom: 5px;
+    }
+    .helper li:first-child {
+        margin-left: 0;
+    }
+    .helper li{
+        margin-left: 0.5rem;
+    }
+    .input-group{
+        flex-wrap: wrap!important;
+    }
+    .helper .kbd {
+        width: 2rem;
+        height: 2rem;
+        font-size: 18px;
+    }
+    .mainInput, .input-group-append, .input-group-append .btn{
+        width: 100%;
+    }
+    .mainInput{
+        font-size: 17px;
+        min-height: 50px;
+    }
+    .solutions{
+        flex-direction: column;
+    }
+
+}

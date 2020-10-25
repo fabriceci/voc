@@ -224,18 +224,25 @@ function App() {
         </div>
     }
 
-    var inputClass;
+    var inputClass = 'mainInput';
     var currentWords = vocabulary[current].es.map(t => t.toLowerCase());
     var currentInput = input.toLowerCase().trim()
-    if (error) inputClass = 'error';
+    if (error) inputClass += ' error';
     if (error && currentWords.includes(currentInput)) {
-        inputClass = 'success'
+        inputClass += ' success'
     } else if (error && currentWords.map(e => e.normalize("NFD").replace(/[\u0300-\u036f]/g, "")).includes(currentInput)) {
-        inputClass = 'warning'
+        inputClass += ' warning'
         if (!tilde) {
             setTilde(true)
         }
 
+    }
+
+    const handleTextarea = (e) => {
+        if(e.key === 'Enter'){
+            e.preventDefault();
+            checkWord();
+        }
     }
     const resultForWord = getStatus().get(vocabulary[current].fr);
     return (
@@ -285,8 +292,8 @@ function App() {
 
 
             <div className="input-group mb-3" style={{width: '100%'}}>
-                <input style={{flexGrow: 1, padding: '0 15px', outline: 'none'}} className={inputClass} type="text" value={input}
-                       onChange={(e) => setInput(e.target.value)}/>
+                <textarea className={inputClass} type="text" value={input}
+                       onKeyPress={handleTextarea} onChange={(e) => setInput(e.target.value)}>{input}</textarea>
                 <div className="input-group-append">
                     <button onClick={checkWord} className="btn btn-primary">Valider</button>
                 </div>
