@@ -1,4 +1,4 @@
-import {useEffect, useState, useCallback} from 'react';
+import {useEffect, useState, useCallback, useRef} from 'react';
 import {GoogleSpreadsheet} from 'google-spreadsheet';
 
 let modules = []
@@ -9,9 +9,29 @@ const getRatio = (attempt, success) => {
     return Math.round((success / attempt) * 100 * 100) / 100
 }
 
+const cleanString = (s) => {
+    if(!s) return ''
+    return s.replaceAll('¡', '')
+            .replaceAll('!', '')
+            .replaceAll('¿', '')
+            .replaceAll('?', '')
+            .replaceAll('.', '')
+            .replaceAll('…', '')
+            .trim()
+            .toLowerCase();
+}
+
 async function loadGoogleSheet(force = false) {
 
     let result = JSON.parse(localStorage.getItem("words"));
+    if(result){
+        let lastSync = localStorage.getItem("lastsync");
+        var yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        if(!lastSync || parseInt(lastSync) < yesterday.getTime()){
+            result = null;
+        }
+    }
     if (!result || force) {
 
         const doc = new GoogleSpreadsheet('1lA849BH1mhhAlnmhamfNnkXQVGJmEz_XpD5Fqbco5m0')
@@ -51,6 +71,7 @@ async function loadGoogleSheet(force = false) {
         // ajout dans la variable globale et dans le storage
         localStorage.setItem("words", JSON.stringify(result));
         localStorage.setItem("modules", JSON.stringify(modulesList));
+        localStorage.setItem("lastsync", JSON.stringify(new Date().getTime()));
 
     }
 
@@ -93,6 +114,7 @@ function App() {
     const [module, setModule] = useState('all')
     const [type, setType] = useState('error')
     const [tilde, setTilde] = useState(false)
+    const textInput = useRef(null);
 
     const refreshData = async () => {
         setVocabulary([]);
@@ -129,13 +151,14 @@ function App() {
         const value = input.toLowerCase().trim();
         const target = vocabulary[current].es;
         if (value.trim() === '') return;
-        if (target.map(t => t.toLowerCase()).includes(value)) {
+        if (target.map(cleanString).includes(cleanString(value))) {
             setCurrent(e => (e + 1) === vocabulary.length ? 0 : e + 1)
             setInput('')
             setError(false);
             setShow(false);
             setTilde(false);
             updateStatus(vocabulary[current].fr, error || show ? -1 : 1)
+            if(textInput) textInput.current.focus()
         } else {
             setError(true);
         }
@@ -184,8 +207,13 @@ function App() {
         setError(false);
         setTilde(false);
         updateStatus(vocabulary[current].fr, -1)
+        if(textInput) textInput.current.focus()
     }
 
+    const addLetter = (letter) => {
+        setInput(input => input += letter)
+        if(textInput) textInput.current.focus()
+    }
 
     const filterModule = (module, filter) => {
         var result = []
@@ -225,12 +253,12 @@ function App() {
     }
 
     var inputClass = 'mainInput';
-    var currentWords = vocabulary[current].es.map(t => t.toLowerCase());
-    var currentInput = input.toLowerCase().trim()
+    var currentWords = vocabulary[current].es.map(cleanString);
+    var currentInput = cleanString(input);
     if (error) inputClass += ' error';
     if (error && currentWords.includes(currentInput)) {
         inputClass += ' success'
-    } else if (error && currentWords.map(e => e.normalize("NFD").replace(/[\u0300-\u036f]/g, "")).includes(currentInput)) {
+    } else if (error && currentWords.map(e => cleanString(e).normalize("NFD").replace(/[\u0300-\u036f]/g, "")).includes(cleanString(currentInput))) {
         inputClass += ' warning'
         if (!tilde) {
             setTilde(true)
@@ -248,7 +276,7 @@ function App() {
     return (
         <div className="App">
             <div className="status">
-                <div>{current + 1}/{vocabulary.length + 1}</div>
+                <div>{current + 1}/{vocabulary.length}</div>
                 <div>
                     <div className="btn btn-info btn-refresh" onClick={refreshData}>mettre à jour les données</div>
                 </div>
@@ -273,12 +301,11 @@ function App() {
             <div style={{position: 'relative'}}>
                 <div className="help-message">Aide à la saisie, cliquez sur une lettre pour l'ajouter</div>
                 <div className="helper">
-                    <li><kbd onClick={() => setInput(input => input += 'ñ')}>ñ</kbd></li>
-                    <li><kbd onClick={() => setInput(input => input += 'á')}>á</kbd></li>
-                    <li><kbd onClick={() => setInput(input => input += 'ó')}>ó</kbd></li>
-                    <li><kbd onClick={() => setInput(input => input += 'í')}>í</kbd></li>
-                    <li><kbd onClick={() => setInput(input => input += '¡')}>¡</kbd></li>
-                    <li><kbd onClick={() => setInput(input => input += '¿')}>¿</kbd></li>
+                    <li><kbd onClick={() => addLetter('ñ')}>ñ</kbd></li>
+                    <li><kbd onClick={() => addLetter('á')}>á</kbd></li>
+                    <li><kbd onClick={() => addLetter('ó')}>ó</kbd></li>
+                    <li><kbd onClick={() => addLetter('í')}>í</kbd></li>
+                    <li><kbd onClick={() => addLetter('ú')}>ú</kbd></li>
                 </div>
             </div>
 
@@ -292,7 +319,7 @@ function App() {
 
 
             <div className="input-group mb-3" style={{width: '100%'}}>
-                <textarea className={inputClass} type="text" value={input}
+                <textarea ref={textInput} className={inputClass} type="text" value={input}
                        onKeyPress={handleTextarea} onChange={(e) => setInput(e.target.value)}>{input}</textarea>
                 <div className="input-group-append">
                     <button onClick={checkWord} className="btn btn-primary">Valider</button>

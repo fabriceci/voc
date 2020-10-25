@@ -178,7 +178,7 @@ input{
     .input-group{
         flex-wrap: wrap!important;
     }
-    .helper .kbd {
+    .helper kbd {
         width: 2rem;
         height: 2rem;
         font-size: 18px;
