@@ -262,6 +262,11 @@ function App() {
             result = copy;
         }
         setCurrent(0)
+        setInput('');
+        setShow(false);
+        setRepeatCount(0);
+        setError(false);
+        setTilde(false);
         setVocabulary(result.sort(() => Math.random() - 0.5));
         if(textInput) textInput.current.focus()
     }
