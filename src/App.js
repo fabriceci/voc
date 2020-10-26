@@ -130,9 +130,11 @@ function App() {
         await loadGoogleSheet(true);
         // setVocabulary([...words].sort(() => Math.random() - 0.5));
         filterModule(module, type);
+        if(textInput) textInput.current.focus()
     }
 
     const readWord = (message) => {
+        if(textInput) textInput.current.focus()
         setError(true)
         var synth = window.speechSynthesis;
         if (!synth) {
@@ -261,6 +263,7 @@ function App() {
         }
         setCurrent(0)
         setVocabulary(result.sort(() => Math.random() - 0.5));
+        if(textInput) textInput.current.focus()
     }
 
     const addFilter = (_type, value) => {
@@ -372,7 +375,11 @@ function App() {
 
             <div className="solutions">
                 {!show &&
-                <button key="show" className="btn btn-danger" onClick={() => setShow(true)}>🕶 Voir la réponse</button>
+                <button key="show" className="btn btn-danger" onClick={() => {
+                        if (textInput) textInput.current.focus()
+                        setShow(true)
+                    }
+                }>🕶 Voir la réponse</button>
                 }
                 {show &&
                 <button key="next" className="btn btn-danger" onClick={nextWord}>Next</button>
