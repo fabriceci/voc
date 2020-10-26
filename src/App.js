@@ -333,7 +333,11 @@ function App() {
                         </select>
                     </div>
                     <div>
-                        <input onChange={() => setRepeat(e => !e)} checked={repeat} type="checkbox" className="form-check-input" id="repeatMode"/>
+                        <input onChange={() => {
+
+                            if(textInput) textInput.current.focus();
+                            setRepeat(e => !e)
+                        }} checked={repeat} type="checkbox" className="form-check-input" id="repeatMode"/>
                         <label className="form-check-label" htmlFor="repeatMode">Répeter en cas d'erreur</label>
                     </div>
                 </div>
