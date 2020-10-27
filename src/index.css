@@ -160,6 +160,12 @@ input{
     width: 100%;
 }
 
+.center{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 @media screen and (max-width: 600px) {
     .status {
         flex-direction: column;
