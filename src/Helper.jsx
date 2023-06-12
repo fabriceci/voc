@@ -31,7 +31,7 @@ export default function Helper() {
             <kbd onClick={() => addLetter("ú")}>ú</kbd>
           </li>
           <li>
-            <kbd onClick={() => addLetter("é")}>ú</kbd>
+            <kbd onClick={() => addLetter("é")}>é</kbd>
           </li>
         </div>
       </div>
